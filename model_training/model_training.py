@@ -146,3 +146,19 @@ class_weights = compute_class_weight(
 history = model.fit(train_gen, epochs=EPOCHS,validation_data=val_gen, callbacks=[early_stopping, model_check])
 
 model.save(f'final_model_dense_{ALPHA}_{GAMMA}.keras')
+
+X_val = []
+for i, (path, label) in enumerate(zip(val_paths, val_labels)):
+    img_np = load_and_pad_image(path, target_size=IMG_HEIGHT, to_RGB=True) # 224 and convert it to 3 channels for Densenet
+    X_val.append(img_np)
+
+X_val = np.array(X_val)  # Shape should now be (num_samples, 224, 224, 3)
+
+print(X_val.shape)
+# Get predictions from the model
+y_pred_prob = model.predict(X_val, batch_size=32, verbose=1)
+y_pred = (y_pred_prob > 0.7).astype(int)  # Convert probabilities to binary labels
+
+# Calculate classification metrics
+report = classification_report(val_labels, y_pred, target_names=['Non-Tortuous', 'Tortuous'])
+print(report)
