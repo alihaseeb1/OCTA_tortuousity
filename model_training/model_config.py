@@ -45,7 +45,7 @@ for p in non_tortuous_paths:
 # train_paths, test_paths, train_labels, test_labels = train_test_split(all_image_paths, all_labels, test_size=0.2, random_state = 1)
 # train_paths, val_paths, train_labels, val_labels = train_test_split(train_paths, train_labels, test_size=0.25, random_state = 1)
 
-train_paths, val_paths, train_labels, val_labels = train_test_split(all_image_paths, all_labels, test_size=0.10, random_state = 1)
+train_paths, val_paths, train_labels, val_labels = train_test_split(all_image_paths, all_labels, test_size=0.01, random_state = 1)
 
 print(f"Train: {len(train_paths)}")
 print(f"Val: {len(val_paths)}")

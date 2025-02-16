@@ -162,3 +162,22 @@ y_pred = (y_pred_prob > 0.7).astype(int)  # Convert probabilities to binary labe
 # Calculate classification metrics
 report = classification_report(val_labels, y_pred, target_names=['Non-Tortuous', 'Tortuous'])
 print(report)
+
+misclassified_indices = []
+
+for i, pred in enumerate(y_pred):
+    if pred[0] != val_labels[i]:
+        misclassified_indices.append(i) 
+
+# Show misclassified images
+for idx in misclassified_indices[:5]:  # Show first 5 misclassified images
+    # Load the image from the path
+    img_np = load_and_pad_image(val_paths[idx], target_size=IMG_HEIGHT, to_RGB=True)
+    true_label = val_labels[idx]
+    pred_label = y_pred[idx][0]
+
+    # Display the misclassified image with its true and predicted labels
+    plt.imshow(img_np)
+    plt.title(f"True: {'Tortuous' if true_label == 1 else 'Non-Tortuous'}, Pred: {'Tortuous' if pred_label == 1 else 'Non-Tortuous'}")
+    plt.axis('off')  # Turn off axes for a cleaner view
+    plt.show()
