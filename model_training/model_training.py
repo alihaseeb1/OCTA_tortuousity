@@ -21,7 +21,7 @@ from sklearn.metrics import classification_report
 
 from tqdm import tqdm
 
-from model_config import IMG_CHANNELS, IMG_HEIGHT, IMG_WIDTH, load_and_pad_image, random_augment, train_labels, train_paths, val_labels, val_paths, BATCH_SIZE 
+from model_config import IMG_CHANNELS, IMG_HEIGHT, IMG_WIDTH, load_and_pad_image, random_augment, train_labels, train_paths, val_labels, val_paths, BATCH_SIZE, focal_loss, f1_score
 
 
 # alpha and gamma for focal loss
@@ -106,23 +106,6 @@ val_gen = CustomDataGenerator(val_paths, val_labels, batch_size=BATCH_SIZE, shuf
 early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
 model_check = ModelCheckpoint(f'best_model_dense_{ALPHA}_{GAMMA}.keras', monitor='val_loss', save_best_only=True)
 
-def f1_score(y_true, y_pred):
-    # cast y_true to float32 so it matches y_pred's type
-    y_true = K.cast(y_true, tf.float32)
-    
-    # threshold it at 0.5 
-    y_pred = K.cast(K.greater(y_pred, 0.5), tf.float32)
-    
-    tp = K.sum(y_true * y_pred)
-    tn = K.sum((1 - y_true) * (1 - y_pred))
-    fp = K.sum((1 - y_true) * y_pred)
-    fn = K.sum(y_true * (1 - y_pred))
-
-    precision = tp / (tp + fp + K.epsilon())
-    recall = tp / (tp + fn + K.epsilon())
-    f1 = 2 * precision * recall / (precision + recall + K.epsilon())
-    return f1
-
 
 densenet_base = DenseNet121(weights='imagenet', include_top=False, input_shape=(224, 224, 3), pooling = "avg")
 
@@ -140,15 +123,6 @@ model = models.Sequential([
     layers.Dense(1, activation = "sigmoid")
 ])
 
-def focal_loss(alpha=0.25, gamma=2.0):
-    def loss(y_true, y_pred):
-        epsilon = K.epsilon()
-        y_pred = K.clip(y_pred, epsilon, 1.0 - epsilon)
-        pt = y_true * y_pred + (1 - y_true) * (1 - y_pred)
-        alpha_factor = y_true * alpha + (1 - y_true) * (1 - alpha)
-        focal_weight = alpha_factor * K.pow((1 - pt), gamma)
-        return K.mean(focal_weight * K.binary_crossentropy(y_true, y_pred))
-    return loss
 
 model.compile(optimizer='adam', loss=focal_loss(alpha=ALPHA, gamma=GAMMA), metrics=['accuracy'])
 

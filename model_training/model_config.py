@@ -27,7 +27,7 @@ IMG_HEIGHT = 224 # after padding (we'll pad )
 IMG_WIDTH = 224  # after padding
 IMG_CHANNELS = 3 # we will increase if need be to match this
 # data_dir = "dataset"
-data_dir = "C:\\Users\\aliha\\OneDrive - Thammasat University\\Desktop\\OCTA\\Vessel Extraction\\Dataset\\extraction\\Dataset"
+data_dir = "C:\\Users\\aliha\\OCTA_tortuousity\\model_training\\Dataset"
 
 tortuous_paths = glob.glob(os.path.join(data_dir, "tortuous", "*"))
 non_tortuous_paths = glob.glob(os.path.join(data_dir, "non_tortuous", "*"))
@@ -96,7 +96,35 @@ def random_augment(img_np):
     img_np = np.rot90(img_np, k=k, axes=(0, 1))
     return img_np
 
+@tf.keras.utils.register_keras_serializable()
+def focal_loss(alpha=0.25, gamma=2.0):
+    def loss(y_true, y_pred):
+        epsilon = K.epsilon()
+        y_pred = K.clip(y_pred, epsilon, 1.0 - epsilon)
+        pt = y_true * y_pred + (1 - y_true) * (1 - y_pred)
+        alpha_factor = y_true * alpha + (1 - y_true) * (1 - alpha)
+        focal_weight = alpha_factor * K.pow((1 - pt), gamma)
+        return K.mean(focal_weight * K.binary_crossentropy(y_true, y_pred))
+    return loss
 
+
+@tf.keras.utils.register_keras_serializable()
+def f1_score(y_true, y_pred):
+    # cast y_true to float32 so it matches y_pred's type
+    y_true = K.cast(y_true, tf.float32)
+    
+    # threshold it at 0.5 
+    y_pred = K.cast(K.greater(y_pred, 0.5), tf.float32)
+    
+    tp = K.sum(y_true * y_pred)
+    tn = K.sum((1 - y_true) * (1 - y_pred))
+    fp = K.sum((1 - y_true) * y_pred)
+    fn = K.sum(y_true * (1 - y_pred))
+
+    precision = tp / (tp + fp + K.epsilon())
+    recall = tp / (tp + fn + K.epsilon())
+    f1 = 2 * precision * recall / (precision + recall + K.epsilon())
+    return f1
 # img = load_and_pad_image("processed_normal (1)_non_tortuous_139.png", 224, to_RGB=True)
 # plt.imshow(img, cmap='gray')
 # plt.title('Skeletonized Image')
