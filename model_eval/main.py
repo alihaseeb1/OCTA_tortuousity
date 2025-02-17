@@ -3,11 +3,12 @@ import tensorflow as tf
 import os
 import glob
 import numpy as np
-from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score, confusion_matrix
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score, confusion_matrix, classification_report
 from .visualize_img import get_visualized_img
 from .calculate_dice import calculate_dice_score
 from .config import data_dirs, original_img_files, PROB_THRESHOLD
 import pandas as pd
+from tqdm import tqdm
 
 # Load the model
 try:
@@ -53,15 +54,17 @@ for i, data_dir in enumerate(data_dirs):
     # Initialize lists for batching
     batch_images = []
     batch_labels = []
+    batch_image_path = []
+
 
     # Process images in batches
-    for idx, image_path in enumerate(all_image_paths):
+    for idx, image_path in tqdm(enumerate(all_image_paths), total=len(all_image_paths), desc="Processing and predicting images"):
         try:
             img = load_and_pad_image(image_path, 224, True)
             batch_images.append(img)
             label = all_labels[idx]
             batch_labels.append(label)
-
+            batch_image_path.append(image_path)
             # Once we reach the batch size, make predictions
             if len(batch_images) == BATCH_SIZE or idx == len(all_image_paths) - 1:
                 # Convert list of images to numpy array
@@ -69,16 +72,17 @@ for i, data_dir in enumerate(data_dirs):
                 batch_labels_np = np.array(batch_labels)
 
                 # Make predictions for the batch
-                preds = model(batch_images_np, training=False, verbose = 1).numpy()
+                preds = model(batch_images_np, training=False).numpy()
 
                 # Process each prediction
-                for pred, true_label in zip(preds, batch_labels_np):
+                for j, (pred, true_label) in enumerate(zip(preds, batch_labels_np)):
                     pred_prob.append(pred)
                     pred_label = 1 if pred > PROB_THRESHOLD else 0
                     pred_labels.append(pred_label)
 
                     if pred_label == 1:
-                        predicted_tortuous_paths.append(image_path)
+                        # print(batch_image_path[j])
+                        predicted_tortuous_paths.append(batch_image_path[j])
 
                     # Update confusion matrix counters
                     if pred_label == 1 and true_label == 1:
@@ -93,6 +97,7 @@ for i, data_dir in enumerate(data_dirs):
                 # Reset batch lists
                 batch_images = []
                 batch_labels = []
+                batch_image_path = []
 
         except Exception as e:
             print(f"Error processing image {image_path}: {e}")
@@ -104,6 +109,8 @@ for i, data_dir in enumerate(data_dirs):
     recall = recall_score(all_labels, pred_labels)
     f1 = f1_score(all_labels, pred_labels)
 
+    report = classification_report(all_labels, pred_labels, target_names=['Non-Tortuous', 'Tortuous'])
+    print(report)
     # Store the results in the dataframe
     metrics_df = pd.concat([metrics_df, pd.DataFrame([{
         'Directory': data_dir,
@@ -125,7 +132,7 @@ for i, data_dir in enumerate(data_dirs):
 
     # Print confusion matrix
     conf_matrix = confusion_matrix(all_labels, pred_labels)
-    conf_matrix = pd.DataFrame(conf_matrix, index=["Actual 0", "Actual 1"], columns=["Predicted 0", "Predicted 1"])
+    conf_matrix = pd.DataFrame(conf_matrix, index=["Actual Non_tortuous", "Actual Tortuous"], columns=["Predicted Non_tortuous", "Predicted Tortuous"])
     print("Confusion Matrix:")
     print(conf_matrix)
 
@@ -141,7 +148,9 @@ for i, data_dir in enumerate(data_dirs):
         ground, weight = get_visualized_img(original_img_files[i], tortuous_paths, is_prediction=False)
     if predicted_tortuous_paths:
         predicted, _ = get_visualized_img(original_img_files[i], predicted_tortuous_paths, is_prediction=True)
-    
+
+    weights_for_image.append(weight)
+
     dice_index = calculate_dice_score(ground, predicted)
     dice_scores.append(dice_index)
 
@@ -177,6 +186,9 @@ metrics_df.to_csv('model_eval/final_csvs/final_results.csv', index=False)
 
 # Save confusion matrices to CSV (optional)
 for idx, conf_matrix in enumerate(confusion_matrices):
-    conf_matrix.to_csv(f"model_eval/final_csvs/confusion_matrix_{dirs_for_conf[idx]}.csv", index=True)
+    print(dirs_for_conf[idx])
+    # assumes that the path is
+    # model_eval/images\{file_name}\result
+    conf_matrix.to_csv(f"model_eval/final_csvs/confusion_matrix_{idx}.csv", index=True)
     
 print("=" * 50)
