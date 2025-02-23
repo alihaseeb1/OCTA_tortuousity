@@ -7,7 +7,7 @@ IMG_WIDTH = 224  # after padding
 IMG_CHANNELS = 3 # we will increase if need be to match this
 
 
-PROB_THRESHOLD = 0.5 # probabilities above this will be considered tortuous
+PROB_THRESHOLD = 0.6 # probabilities above this will be considered tortuous
 
 
 # list of images, that we we want to test against the model

@@ -110,6 +110,10 @@ for i, data_dir in enumerate(data_dirs):
     f1 = f1_score(all_labels, pred_labels)
 
     report = classification_report(all_labels, pred_labels, target_names=['Non-Tortuous', 'Tortuous'])
+    
+    print("=" * 50)
+    print(f"For directory: {data_dir}")
+    print("=" * 50)
     print(report)
     # Store the results in the dataframe
     metrics_df = pd.concat([metrics_df, pd.DataFrame([{
@@ -124,7 +128,6 @@ for i, data_dir in enumerate(data_dirs):
 
     # Print results
     print("=" * 50)
-    print(f"For directory: {data_dir}")
     print(f"Accuracy: {accuracy:.4f}")
     print(f"Precision: {precision:.4f}")
     print(f"Recall: {recall:.4f}")

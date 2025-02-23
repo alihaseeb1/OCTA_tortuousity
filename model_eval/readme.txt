@@ -6,7 +6,7 @@ TO RUN THIS PROGRAM:
 -----------------------------------
 1. open the directory /OCTA_tortuosity
 2. run the python file using 
-	python -m model_eval/main
+	python -m model_eval.main
 
 
 
