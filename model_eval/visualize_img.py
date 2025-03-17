@@ -7,9 +7,37 @@ import os
 # this file takes in the list of the image paths (tortuous vessel segments), as well as the original image (whole vessel network)
 # it will output an RBG image with tortuous vessels colored red
 # we will assume that we have the log_file path: "vessels_localized_log.csv"
+color_list = [
+    (255, 0, 0),   # Red
+    (0, 255, 0),   # Green
+    (0, 0, 255),   # Blue
+    (255, 255, 0), # Yellow
+    (0, 255, 255), # Cyan
+    (255, 0, 255)  # Magenta
+]
 
+def get_vessel_color(vessel_name):
+    """
+    Assigns color based on the file name. If the file name starts with a number or prefix,
+    that will determine the index in the color list.
+    We use this to make sure that we get the same color for each vessel every time
 
-def get_visualized_img(image_path, tortuous_list, is_prediction):
+    Args:
+        vessel_name (str): The vessel file name.
+
+    Returns:
+        tuple: A BGR color tuple.
+    """
+    prefix = vessel_name.split('_')[0]  # Example: Extract '123' from '123_vessel_name.png'
+
+    try:
+        index = int(prefix) % len(color_list)  # Ensure the index is within the color list bounds
+    except ValueError:
+        index = hash(vessel_name) % len(color_list)  # Using hash to get a pseudo-random index
+
+    return color_list[index]
+
+def get_visualized_img(image_path, tortuous_list, is_prediction, region_size=1):
     """
     Visualizes tortuous vessel segments on an image.
 
@@ -50,18 +78,31 @@ def get_visualized_img(image_path, tortuous_list, is_prediction):
     image_rgb = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
     all_x = []
     all_y = []
-    # Iterate over the coordinates and set the pixel color to red
+
+    vessels = []
+    # Iterate over the coordinates and color the vessels
     for ind, row in final_df.iterrows():
+        vessel_name = row[0]
         ys = ast.literal_eval(row[2])  # row[2] is a string
         xs = ast.literal_eval(row[1])
+        vessels.append((vessel_name, ys, xs, len(xs)))
+    # all_x = np.array(all_x, dtype=int)
+    # all_y = np.array(all_y, dtype=int)
+    # sort the vessels so that we can color the shorter ones first and longer ones last (we can keep the longer one when they overlap)
+    vessels.sort(key = lambda x: x[3])
+    
+    for vessel_name, ys, xs, _ in vessels:
+        vessel_color = get_vessel_color(vessel_name)
+        for x, y in zip(xs, ys):
+            for dx in range(-region_size, region_size + 1):
+                for dy in range(-region_size, region_size + 1):
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < image.shape[1] and 0 <= ny < image.shape[0]:  # Ensure the pixel is within the image bounds
+                        image_rgb[ny, nx] = vessel_color
         all_x.extend(xs)
         all_y.extend(ys)
-    all_x = np.array(all_x, dtype=int)
-    all_y = np.array(all_y, dtype=int)
-
-
     # Set pixels to red (BGR = [0, 0, 255])
-    image_rgb[all_y, all_x] = [0, 255, 0]
+    # image_rgb[all_y, all_x] = [0, 0, 255]
 
     # Save image
     if is_prediction:
