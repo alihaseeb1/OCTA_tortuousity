@@ -28,7 +28,7 @@ def get_vessel_color(vessel_name):
     Returns:
         tuple: A BGR color tuple.
     """
-    prefix = vessel_name.split('_')[0]  # Example: Extract '123' from '123_vessel_name.png'
+    prefix = vessel_name.split('.')[0]  # Example: Extract '123' from '123_vessel_name.png'
 
     try:
         index = int(prefix) % len(color_list)  # Ensure the index is within the color list bounds
@@ -37,7 +37,7 @@ def get_vessel_color(vessel_name):
 
     return color_list[index]
 
-def get_visualized_img(image_path, tortuous_list, is_prediction, region_size=1):
+def get_visualized_img(image_path, tortuous_list, is_prediction, region_size=1, save_image = True):
     """
     Visualizes tortuous vessel segments on an image.
 
@@ -64,7 +64,7 @@ def get_visualized_img(image_path, tortuous_list, is_prediction, region_size=1):
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 
     # Load the CSV file containing the coordinates
-    csv_path = os.path.join("model_eval/images", image_file.split(".")[0], 'vessels_localized_log.csv')  
+    csv_path = os.path.join("./OCTA_tortuousity/model_eval/images", image_file.split(".")[0], 'vessels_localized_log.csv')  
     # They are in the format img file name, x coordinates, y coordinates
     coords_df = pd.read_csv(csv_path, header=None)
 
@@ -105,10 +105,11 @@ def get_visualized_img(image_path, tortuous_list, is_prediction, region_size=1):
     # image_rgb[all_y, all_x] = [0, 0, 255]
 
     # Save image
-    if is_prediction:
-        cv2.imwrite(os.path.join("model_eval/result", "predicted_"+ image_file.split(".")[0] + "_annotated" + '.png'), image_rgb)  # Save the image with red-colored pixels
-    else:
-        cv2.imwrite(os.path.join("model_eval/result", image_file.split(".")[0] + "_annotated" +  '.png'), image_rgb)  # Save the image with red-colored pixels
+    if save_image:
+        if is_prediction:
+            cv2.imwrite(os.path.join("./OCTA_tortuousity/model_eval/result", "predicted_"+ image_file.split(".")[0] + "_annotated" + '.png'), image_rgb)  # Save the image with red-colored pixels
+        else:
+            cv2.imwrite(os.path.join("./OCTA_tortuousity/model_eval/result", image_file.split(".")[0] + "_annotated" +  '.png'), image_rgb)  # Save the image with red-colored pixels
     
     return list(zip(all_x, all_y)), len(all_x)
     # to display

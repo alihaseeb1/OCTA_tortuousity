@@ -1,7 +1,8 @@
-from model_training.model_config import load_and_pad_image, focal_loss, f1_score
+from ..model_training.model_config import load_and_pad_image, focal_loss, f1_score
 import tensorflow as tf
 import os
 import glob
+import cv2
 import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score, confusion_matrix, classification_report
 from .visualize_img import get_visualized_img
@@ -13,7 +14,7 @@ from tqdm import tqdm
 # Load the model
 try:
     model = tf.keras.models.load_model(
-            'model_eval/model.keras',
+            './OCTA_tortuousity/model_eval/model.keras',
             custom_objects={
                 'loss': focal_loss,
                 'f1_m': f1_score
@@ -41,6 +42,15 @@ dirs_for_conf = [] # directory for name of confusion matrix file
 
 # Process each dataset
 for i, data_dir in enumerate(data_dirs):
+    # get the folder name for saving wrong images
+    image_dir_name = os.path.normpath(data_dir)
+    image_dir_name = image_dir_name.split("\\")[-2]
+
+    if not os.path.exists("./OCTA_tortuousity/model_eval/wronglyTortuous/" + image_dir_name): 
+        os.makedirs("./OCTA_tortuousity/model_eval/wronglyTortuous/" + image_dir_name)
+    if not os.path.exists("./OCTA_tortuousity/model_eval/wronglyNonTortuous/" + image_dir_name): 
+        os.makedirs("./OCTA_tortuousity/model_eval/wronglyNonTortuous/" + image_dir_name)
+
     # Gather image paths and labels
     tortuous_paths = glob.glob(os.path.join(data_dir, "tortuous", "*"))
     non_tortuous_paths = glob.glob(os.path.join(data_dir, "non_tortuous", "*"))
@@ -83,15 +93,21 @@ for i, data_dir in enumerate(data_dirs):
                     if pred_label == 1:
                         # print(batch_image_path[j])
                         predicted_tortuous_paths.append(batch_image_path[j])
-
+                    
+                    filename = batch_image_path[j].split("\\")[-1]
+                    # print(filename)
                     # Update confusion matrix counters
                     if pred_label == 1 and true_label == 1:
                         tp += 1
                     elif pred_label == 0 and true_label == 0:
                         tn += 1
                     elif pred_label == 1 and true_label == 0:
+                        #is non tortuous but predicted tortuous
+                        cv2.imwrite(os.path.join("./OCTA_tortuousity/model_eval/wronglyTortuous", image_dir_name, filename), batch_images_np[j] * 255)
                         fp += 1
                     elif pred_label == 0 and true_label == 1:
+                        #is tortuous but predicted non tortuous
+                        cv2.imwrite(os.path.join("./OCTA_tortuousity/model_eval/wronglyNonTortuous", image_dir_name, filename), batch_images_np[j] * 255)
                         fn += 1
 
                 # Reset batch lists
@@ -185,13 +201,13 @@ metrics_df['Weighted Dice Score'] = weighted_dice_score
 print(f"Weighted Final Dice Score: {weighted_dice_score}")
 
 # Save metrics to CSV
-metrics_df.to_csv('model_eval/final_csvs/final_results.csv', index=False)
+metrics_df.to_csv('./OCTA_tortuousity/model_eval/final_csvs/final_results.csv', index=False)
 
 # Save confusion matrices to CSV (optional)
 for idx, conf_matrix in enumerate(confusion_matrices):
     print(dirs_for_conf[idx])
     # assumes that the path is
     # model_eval/images\{file_name}\result
-    conf_matrix.to_csv(f"model_eval/final_csvs/confusion_matrix_{idx}.csv", index=True)
+    conf_matrix.to_csv(f"./OCTA_tortuousity/model_eval/final_csvs/confusion_matrices/confusion_matrix_{idx}.csv", index=True)
     
 print("=" * 50)

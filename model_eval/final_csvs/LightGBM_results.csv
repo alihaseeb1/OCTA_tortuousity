@@ -1,0 +1,3 @@
+Directory,Model,Accuracy,Precision,Recall,F1 Score,Dice Score,Weighted Dice Score
+./OCTA_tortuousity/model_eval/images\processed_normal (77)\result,LightGBM,0.9110105580693816,0.8070175438596491,0.7131782945736435,0.757201646090535,0.8432215010512844,0.8763474658906887
+./OCTA_tortuousity/model_eval/images\processed_pdr (122)\result,LightGBM,0.9127625201938611,0.8781725888324873,0.8522167487684729,0.865,0.9077988557663355,0.8763474658906887
