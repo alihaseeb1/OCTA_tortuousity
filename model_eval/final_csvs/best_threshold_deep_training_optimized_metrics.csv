@@ -1,0 +1,2 @@
+Directory,Threshold,Accuracy,Precision,Recall,F1 Score
+./OCTA_tortuousity/Dataset/Dataset,0.6,0.9592004882514495,0.8608773272124458,0.964842075175075,0.9098995889210864

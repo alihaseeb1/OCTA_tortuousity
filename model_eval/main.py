@@ -7,7 +7,7 @@ import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score, confusion_matrix, classification_report
 from .visualize_img import get_visualized_img
 from .calculate_dice import calculate_dice_score
-from .config import data_dirs, original_img_files, PROB_THRESHOLD
+from .config import data_dirs, original_img_files, PROB_THRESHOLD, PROB_THRESHOLDS
 import pandas as pd
 from tqdm import tqdm
 
@@ -22,6 +22,7 @@ try:
         )
 except Exception as e:
     raise RuntimeError(f"Failed to load model: {e}")
+
 
 accuracies, precisions, recalls, f1_scores, dice_indexes = [], [], [], [], []
 
@@ -84,7 +85,7 @@ for i, data_dir in enumerate(data_dirs):
                 # Make predictions for the batch
                 preds = model(batch_images_np, training=False).numpy()
 
-                # Process each prediction
+                # Process each prediction for different probability thresholds
                 for j, (pred, true_label) in enumerate(zip(preds, batch_labels_np)):
                     pred_prob.append(pred)
                     pred_label = 1 if pred > PROB_THRESHOLD else 0
@@ -187,7 +188,6 @@ if len(metrics_df) > 0:
     print(f"Recall: {metrics_df['Recall'].mean():.4f}")
     print(f"F1 Score: {metrics_df['F1 Score'].mean():.4f}")
 
-print("=" * 50)
 
 # Compute and save weighted dice score
 weights_sum = sum(weights_for_image)
@@ -198,7 +198,11 @@ else:
 
 metrics_df['Weighted Dice Score'] = weighted_dice_score
 
+print(f"Unweighted Final Dice Score: {sum(dice_scores) / len(dice_scores)}")
+
 print(f"Weighted Final Dice Score: {weighted_dice_score}")
+
+print("=" * 50)
 
 # Save metrics to CSV
 metrics_df.to_csv('./OCTA_tortuousity/model_eval/final_csvs/final_results.csv', index=False)

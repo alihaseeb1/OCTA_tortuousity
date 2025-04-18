@@ -9,7 +9,9 @@ IMG_CHANNELS = 3 # we will increase if need be to match this
 
 PROB_THRESHOLD = 0.6 # probabilities above this will be considered tortuous
 
-THRESHOLD_TIS = [0.1, 0.11, 0.12, 0.13] # above this will all be considered tortuous
+PROB_THRESHOLDS = [0.5, 0.55, 0.6, 0.65, 0.7]
+
+THRESHOLD_TIS = [0.08, 0.09, 0.1, 0.11, 0.12] # above this will all be considered tortuous
 
 # list of images, that we we want to test against the model
 # we will traverse the original image file folder in original_images

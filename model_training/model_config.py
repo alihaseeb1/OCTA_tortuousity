@@ -27,7 +27,8 @@ IMG_HEIGHT = 224 # after padding (we'll pad )
 IMG_WIDTH = 224  # after padding
 IMG_CHANNELS = 3 # we will increase if need be to match this
 # data_dir = "dataset"
-data_dir = "C:\\Users\\aliha\\OCTA_tortuousity\\model_training\\Dataset"
+# data_dir = "C:\\Users\\aliha\\OCTA_tortuousity\\model_training\\Dataset"
+data_dir = "C:\\Users\\aliha\\OCTA_tortuousity\\Dataset\\test"
 
 tortuous_paths = glob.glob(os.path.join(data_dir, "tortuous", "*"))
 non_tortuous_paths = glob.glob(os.path.join(data_dir, "non_tortuous", "*"))
@@ -45,14 +46,14 @@ for p in non_tortuous_paths:
 # train_paths, test_paths, train_labels, test_labels = train_test_split(all_image_paths, all_labels, test_size=0.2, random_state = 1)
 # train_paths, val_paths, train_labels, val_labels = train_test_split(train_paths, train_labels, test_size=0.25, random_state = 1)
 
-train_paths, val_paths, train_labels, val_labels = train_test_split(all_image_paths, all_labels, test_size=0.01, random_state = 1)
+train_paths, val_paths, train_labels, val_labels = train_test_split(all_image_paths, all_labels, test_size=0.15, random_state = 1)
 
 print(f"Train: {len(train_paths)}")
 print(f"Val: {len(val_paths)}")
 # print(f"Test: {len(test_paths)}")
 
 
-def load_and_pad_image(path, target_size = 1024, to_RGB = False):
+def load_and_pad_image(path, target_size = 224, to_RGB = False):
     """
     - Opens the image in grayscale
     - If it's larger than target_size in any dimension, resizes down
@@ -68,12 +69,16 @@ def load_and_pad_image(path, target_size = 1024, to_RGB = False):
     img = Image.fromarray(img_np, mode="L")
 
     w , h = img.size
-
+    new_w, new_h = img.size
+    
     ratio = min(target_size / w, target_size / h)
-    new_w, new_h = int(w * ratio), int(h * ratio)
-    img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+    if not(w < target_size and h < target_size):
+        new_w, new_h = int(w * ratio), int(h * ratio)
+        img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
 
     new_img = Image.new("L", (target_size, target_size))
+    
     left = (target_size - new_w) // 2
     top = (target_size - new_h) // 2
     new_img.paste(img, (left, top))

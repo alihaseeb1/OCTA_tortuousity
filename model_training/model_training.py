@@ -129,7 +129,7 @@ model.compile(optimizer='adam', loss=focal_loss(alpha=ALPHA, gamma=GAMMA), metri
 model.summary()
 
 
-EPOCHS = 50
+EPOCHS = 1
 
 # history = model.fit(train_gen, epochs=EPOCHS, validation_data=val_gen)
 
@@ -147,6 +147,7 @@ history = model.fit(train_gen, epochs=EPOCHS,validation_data=val_gen, callbacks=
 
 model.save(f'final_model_dense_{ALPHA}_{GAMMA}.keras')
 
+
 X_val = []
 for i, (path, label) in enumerate(zip(val_paths, val_labels)):
     img_np = load_and_pad_image(path, target_size=IMG_HEIGHT, to_RGB=True) # 224 and convert it to 3 channels for Densenet
@@ -157,9 +158,12 @@ X_val = np.array(X_val)  # Shape should now be (num_samples, 224, 224, 3)
 print(X_val.shape)
 # Get predictions from the model
 y_pred_prob = model.predict(X_val, batch_size=32, verbose=1)
-y_pred = (y_pred_prob > 0.7).astype(int)  # Convert probabilities to binary labels
+y_pred = (y_pred_prob > 0.6).astype(int)  # Convert probabilities to binary labels
 
 # Calculate classification metrics
+print("=" * 30)
+print("Final Results on the Validation Set:")
+print("=" * 30)
 report = classification_report(val_labels, y_pred, target_names=['Non-Tortuous', 'Tortuous'])
 print(report)
 
@@ -170,14 +174,14 @@ for i, pred in enumerate(y_pred):
         misclassified_indices.append(i) 
 
 # Show misclassified images
-for idx in misclassified_indices[:5]:  # Show first 5 misclassified images
-    # Load the image from the path
-    img_np = load_and_pad_image(val_paths[idx], target_size=IMG_HEIGHT, to_RGB=True)
-    true_label = val_labels[idx]
-    pred_label = y_pred[idx][0]
+# for idx in misclassified_indices[:5]:  # Show first 5 misclassified images
+#     # Load the image from the path
+#     img_np = load_and_pad_image(val_paths[idx], target_size=IMG_HEIGHT, to_RGB=True)
+#     true_label = val_labels[idx]
+#     pred_label = y_pred[idx][0]
 
-    # Display the misclassified image with its true and predicted labels
-    plt.imshow(img_np)
-    plt.title(f"True: {'Tortuous' if true_label == 1 else 'Non-Tortuous'}, Pred: {'Tortuous' if pred_label == 1 else 'Non-Tortuous'}")
-    plt.axis('off')  # Turn off axes for a cleaner view
-    plt.show()
+#     # Display the misclassified image with its true and predicted labels
+#     plt.imshow(img_np)
+#     plt.title(f"True: {'Tortuous' if true_label == 1 else 'Non-Tortuous'}, Pred: {'Tortuous' if pred_label == 1 else 'Non-Tortuous'}")
+#     plt.axis('off')  # Turn off axes for a cleaner view
+#     plt.show()
